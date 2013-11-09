@@ -1,0 +1,113 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Windows.Forms;
+
+namespace anotherprojectTestSample
+{
+    public partial class MainForm : Form
+    {
+        private IplImage frame;
+        private IplImage imgMain;
+        private CvCapture VideoCapture;
+        private IplImage frames;
+
+        private int fps;
+
+
+        public MainForm()
+        {
+            InitializeComponent();
+        }
+
+        private void btnVideo_Click(object sender, EventArgs e)
+        {
+            double vidWidth, vidHeight;
+
+            if (btnVideo.Text.CompareTo("Start Video") == 0)
+            {
+                try
+                {
+                    VideoCapture = cvlib.cvCreateCameraCapture(0);
+                }
+                catch (Exception excpt)
+                {
+                    MessageBox.Show(excpt.Message);
+                }
+
+                    if (VideoCapture == null)
+                    {
+                        MessageBox.Show("Failed");
+                        return;
+                    }
+
+                    btnVideo.Text = "Stop Video";
+
+                    cvlib.cvSetCaptureProperty(VideoCapture, cvlib.CV_CAP_PROP_FRAME_WIDTH, 640);
+                    cvlib.cvSetCaptureProperty(VideoCapture, cvlib.CV_CAP_PROP_FRAME_HEIGHT, 320);
+
+                    frames = cvlib.cvQueryFrame(VideoCapture);
+
+                    vidWidth = cvlib.cvGetCaptureProperty(VideoCapture, cvlib.CV_CAP_PROP_FRAME_WIDTH);
+                    vidHeight = cvlib.cvGetCaptureProperty(VideoCapture, cvlib.CV_CAP_PROP_FRAME_HEIGHT);
+
+                    CamImageBox.Width = (int)vidWidth;
+                    CamImageBox.Height = (int)vidHeight;
+
+                    timerGrab.Interval = 5000;
+                    timerGrab.Enabled = true;
+                    timerFPS.Interval = 1100;
+                    timerFPS.Enabled = true;
+            }
+
+            else
+            {
+                btnVideo.Text = "Start Video";
+                timerGrab.Enabled = false;
+                timerFPS.Enabled = false;
+
+                if (VideoCapture == null)
+                {
+                    cvlib.cvReleaseImage(frames);
+                    VideoCapture = null;
+                }
+            }
+
+
+        }
+
+        private void timerGrab_Tick(object sender, EventArgs e)
+        {
+            frame = cvlib.cvQueryFrame(VideoCapture);
+
+            if (frame == null)
+            {
+                timerGrab.Stop();
+                MessageBox.Show("failed");
+                return;
+            }
+
+            imgMain = cvlib.cvCreateImage(cvlib.cvSize(640, 480), 8, 3);
+
+            CamImageBox.Image = cvlib.ToBitmap(imgMain, false);
+
+            cvlib.cvReleaseImage(imgMain);
+
+            fps++;
+
+        }
+
+        private void timerFPS_Tick(object sender, EventArgs e)
+        {
+            toolStripStatusLabel.Text = "Frame Rate: " + fps.ToString() + "Fps";
+            fps = 0;
+        }
+
+    }
+}
+
+
